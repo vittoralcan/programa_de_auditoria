@@ -3,690 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auditoria de Caixas</title>
-    <!-- Carregamento do Tailwind CSS para estilo e responsividade -->
+    <title>Dashboard de Auditoria - Google Sheets</title>
+    <!-- Carrega Tailwind CSS para estilização fácil e responsiva -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary': '#10b981', // Emerald green
+                        'secondary': '#374151', // Gray-700
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        /* Configuração de fonte e cores de fundo globais */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-        :root {
-            font-family: 'Inter', sans-serif;
+        .container-card {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            background-color: white;
+            transition: all 0.3s ease;
         }
-        /* Configurações do tema escuro conforme solicitado */
-        body {
-            background-color: #1a202c; /* Cinza escuro */
-            color: #e2e8f0; /* Texto claro */
-        }
-        /* Estilo para a barra de rolagem (opcional) */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background-color: #4a5568;
-            border-radius: 10px;
+        .container-card:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
     </style>
 </head>
-<body class="p-4 sm:p-8 min-h-screen">
+<body class="bg-gray-50 min-h-screen p-4 sm:p-8 font-sans">
 
-    <div id="app-container" class="max-w-xl mx-auto bg-gray-800 shadow-2xl rounded-xl p-4 sm:p-6">
-        <h1 class="text-3xl font-bold text-center text-sky-400 mb-6">
-            Auditoria de Caixas
+    <div id="app" class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-extrabold text-secondary mb-6 border-b-4 border-primary pb-2">
+            Dashboard da Base de Auditoria
         </h1>
 
-        <!-- Identificador de Usuário (Necessário para apps multi-usuário com Firestore) -->
-        <div class="mb-4 p-3 bg-gray-700 rounded-lg text-sm truncate">
-            <span class="font-semibold text-gray-400">ID do Usuário:</span> 
-            <span id="user-id-display" class="text-sky-300">Carregando...</span>
-        </div>
-        
-        <!-- Navegação por Abas (3 Abas) -->
-        <div class="flex border-b border-gray-700 mb-6 -mx-4">
-            <!-- Aba de Visualização de Pallets (Padrão) -->
-            <button id="tab-overview" data-tab="overview" class="tab-button w-1/3 py-3 text-sm sm:text-base font-medium text-center transition-colors duration-200 border-b-2 border-sky-500 text-sky-400">
-                Visualização Pallets
-            </button>
-            <!-- Aba de Registro -->
-            <button id="tab-register" data-tab="register" class="tab-button w-1/3 py-3 text-sm sm:text-base font-medium text-center transition-colors duration-200 border-b-2 border-transparent text-gray-400 hover:text-sky-400">
-                Novo Registro
-            </button>
-            <!-- Aba de Lista Completa -->
-            <button id="tab-list" data-tab="list" class="tab-button w-1/3 py-3 text-sm sm:text-base font-medium text-center transition-colors duration-200 border-b-2 border-transparent text-gray-400 hover:text-sky-400">
-                Lista Completa
-            </button>
-        </div>
-
-        <!-- Conteúdo das Abas -->
-
-        <!-- 1. Aba de Visualização de Pallets e Pesquisa (NOVA) -->
-        <div id="view-overview" class="tab-view space-y-4">
-            <div class="relative mb-4">
-                <!-- Campo de Pesquisa -->
-                <input type="text" id="search-input" placeholder="Pesquisar por Código, Pallet ou Situação..." 
-                       class="w-full p-3 pl-10 bg-gray-700 border border-gray-600 rounded-lg focus:ring-sky-500 focus:border-sky-500 text-white placeholder-gray-400 transition duration-150">
-                <!-- Ícone de Pesquisa (Lupa) -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-3.5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+        <!-- Cartão Principal para Exibir os Dados -->
+        <div class="container-card">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Dados Carregados (data_base_auditoria)</h2>
+            
+            <div id="loadingIndicator" class="text-center text-primary font-medium p-4 hidden">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-primary inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
+                Carregando dados da planilha...
             </div>
-            <div id="pallet-overview-container" class="space-y-4">
-                <p id="overview-loading-message" class="text-center text-gray-400">Carregando visualização de pallets...</p>
-                <!-- Pallets e Caixas serão injetados aqui -->
+
+            <div id="dataTableContainer" class="overflow-x-auto">
+                <!-- A tabela de dados será inserida aqui -->
             </div>
-        </div>
-
-        <!-- 2. Aba de Registro de Caixa (Atualizada) -->
-        <div id="view-register" class="tab-view hidden space-y-4">
-            <form id="box-form" class="space-y-4">
-                
-                <!-- Código da Caixa -->
-                <div>
-                    <label for="box-code" class="block text-sm font-medium text-gray-300 mb-1">Código da Caixa</label>
-                    <input type="text" id="box-code" required 
-                           class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-sky-500 focus:border-sky-500 text-white placeholder-gray-400 transition duration-150">
-                </div>
-
-                <!-- Pallet -->
-                <div>
-                    <label for="pallet-name" class="block text-sm font-medium text-gray-300 mb-1">Pallet</label>
-                    <input type="text" id="pallet-name" required 
-                           class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-sky-500 focus:border-sky-500 text-white placeholder-gray-400 transition duration-150">
-                </div>
-                
-                <!-- Projeto (NOVO CAMPO) -->
-                <div>
-                    <label for="box-project" class="block text-sm font-medium text-gray-300 mb-1">Projeto</label>
-                    <input type="text" id="box-project" 
-                           class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-sky-500 focus:border-sky-500 text-white placeholder-gray-400 transition duration-150">
-                </div>
-
-                <!-- Situação -->
-                <div>
-                    <label for="box-status" class="block text-sm font-medium text-gray-300 mb-1">Situação</label>
-                    <select id="box-status" required 
-                            class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-sky-500 focus:border-sky-500 text-white transition duration-150 appearance-none pr-8">
-                        <option value="Pendente" class="bg-gray-700 text-yellow-400">Pendente</option>
-                        <option value="Finalizado" class="bg-gray-700 text-green-400">Finalizado</option>
-                    </select>
-                </div>
-
-                <!-- Descrição do Problema -->
-                <div>
-                    <label for="box-problem" class="block text-sm font-medium text-gray-300 mb-1">Descrição do Problema</label>
-                    <textarea id="box-problem" rows="4" required 
-                              class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-sky-500 focus:border-sky-500 text-white placeholder-gray-400 transition duration-150"></textarea>
-                </div>
-
-                <!-- Botão de Envio -->
-                <button type="submit" id="submit-button"
-                        class="w-full py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-500 focus:ring-opacity-50 transition duration-300 transform hover:scale-[1.01] disabled:bg-sky-400">
-                    Registrar Caixa
-                </button>
-                <p id="feedback-message" class="text-center text-sm font-medium h-4"></p>
-            </form>
-        </div>
-
-        <!-- 3. Aba de Lista Completa de Caixas -->
-        <div id="view-list" class="tab-view hidden space-y-4">
-            <h3 class="text-xl font-semibold text-gray-200 mb-4">Lista Completa de Caixas</h3>
-            <div id="list-container" class="space-y-3">
-                <p id="list-loading-message" class="text-center text-gray-400">Carregando lista completa...</p>
-                <!-- A lista de caixas será injetada aqui -->
-            </div>
-        </div>
-
-    </div>
-
-    <!-- Modal de Notificação/Confirmação (Substitui alert/confirm) -->
-    <div id="notification-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center p-4 z-50">
-        <div class="bg-gray-700 p-6 rounded-xl shadow-2xl max-w-sm w-full space-y-4">
-            <h4 id="modal-title" class="text-xl font-bold text-white">Notificação</h4>
-            <p id="modal-message" class="text-gray-300"></p>
-            <div id="modal-actions" class="flex space-x-3">
-                <button id="modal-confirm-button" class="flex-1 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-150 hidden">
-                    Confirmar
-                </button>
-                <button id="modal-close-button" class="flex-1 py-2 bg-sky-600 text-white font-semibold rounded-lg hover:bg-sky-700 transition duration-150">
-                    Fechar
-                </button>
-            </div>
+            
+            <p id="errorFeedback" class="text-red-600 font-medium mt-4 hidden"></p>
         </div>
     </div>
 
-    <!-- Configuração e Lógica do Firebase Firestore -->
-    <script type="module">
-        // Importações do Firebase (Versão 11.6.1)
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        // Importações adicionais para a operação em lote, consulta e exclusão
-        import { getFirestore, collection, addDoc, query, onSnapshot, setLogLevel, serverTimestamp, writeBatch, where, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Variáveis globais MANDATÓRIAS do Canvas/Immersive
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    <script>
+        // --- URL CSV ATUALIZADO: Inclui o parâmetro 'output=csv' e 'gid=0' para a primeira aba. ---
+        const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuv4IvYqYqEKQOS52mr1L6-GJGQeLTdjNE3Ws7Oey4EI2VGO9CNwhZN4mbE_SkmAWP05AfLBDahsc5/pub?output=csv&gid=0'; 
+        // ---------------------------------------------------------------------------------------
         
-        setLogLevel('Debug'); // Habilita logs de debug do Firebase
-        
-        let app, db, auth;
-        let userId = null;
-        let isAuthReady = false;
-        let allBoxes = []; // Armazena todos os dados brutos
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const dataTableContainer = document.getElementById('dataTableContainer');
+        const errorFeedback = document.getElementById('errorFeedback');
 
-        // --- Elementos DOM ---
-        const tabButtons = document.querySelectorAll('.tab-button');
-        const tabViews = document.querySelectorAll('.tab-view');
-        const boxForm = document.getElementById('box-form');
-        const boxCodeInput = document.getElementById('box-code');
-        const palletNameInput = document.getElementById('pallet-name');
-        const boxProjectInput = document.getElementById('box-project'); // NOVO: Campo Projeto
-        const boxStatusSelect = document.getElementById('box-status');
-        const boxProblemTextarea = document.getElementById('box-problem');
-        const submitButton = document.getElementById('submit-button');
-        const feedbackMessage = document.getElementById('feedback-message');
-        const userIdDisplay = document.getElementById('user-id-display');
-        const listContainer = document.getElementById('list-container');
-        const palletOverviewContainer = document.getElementById('pallet-overview-container');
-        const searchInput = document.getElementById('search-input');
-
-        // --- Lógica do Modal de Notificação/Confirmação (Substitui alert/confirm) ---
-        const modal = document.getElementById('notification-modal');
-        const modalTitle = document.getElementById('modal-title');
-        const modalMessage = document.getElementById('modal-message');
-        const modalCloseButton = document.getElementById('modal-close-button');
-        const modalConfirmButton = document.getElementById('modal-confirm-button');
-
-        // Função para mostrar notificação simples
-        function showNotification(title, message) {
-            modalTitle.textContent = title;
-            modalMessage.textContent = message;
+        /**
+         * Converte uma string CSV em um array de objetos JavaScript.
+         * Tenta detectar o separador (vírgula ou ponto e vírgula).
+         * @param {string} csvText - O conteúdo CSV bruto.
+         * @returns {Array<Object>} Um array de objetos com os dados.
+         */
+        function parseCSV(csvText) {
+            if (!csvText) return [];
             
-            modalConfirmButton.classList.add('hidden'); // Esconde o botão de confirmação
-            modalCloseButton.classList.remove('flex-1'); // Faz o botão Fechar ocupar a largura total
-            modalCloseButton.classList.add('w-full');
+            const lines = csvText.trim().split('\n');
+            if (lines.length <= 1) return []; // Deve ter pelo menos 1 linha de cabeçalho + 1 de dados
             
-            // Define o Fechar padrão
-            modalCloseButton.onclick = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); };
+            const firstDataLine = lines[1];
             
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
+            // Tenta detectar o separador: vírgula é o padrão para o Google Sheets em inglês, 
+            // ponto e vírgula é comum em planilhas localizadas para português.
+            let separator = ',';
+            if ((firstDataLine.match(/,/g) || []).length < (lines[0].match(/,/g) || []).length) {
+                // Se a primeira linha de dados tem menos vírgulas que o cabeçalho, 
+                // e houver pontos e vírgulas, tenta ponto e vírgula.
+                 if ((firstDataLine.match(/;/g) || []).length >= (lines[0].match(/;/g) || []).length) {
+                    separator = ';';
+                 }
+            }
 
-        // Função para mostrar modal de confirmação
-        function showConfirmationModal(title, message, onConfirm) {
-            modalTitle.textContent = title;
-            modalMessage.textContent = message;
+            const headers = lines[0].split(separator).map(header => header.trim().replace(/"/g, ''));
             
-            // Configura botões para confirmação
-            modalConfirmButton.classList.remove('hidden');
-            modalConfirmButton.classList.add('flex-1');
-            modalCloseButton.classList.remove('w-full');
-            modalCloseButton.classList.add('flex-1');
+            const data = [];
             
-            // Lógica do botão Confirmar
-            modalConfirmButton.onclick = () => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-                onConfirm(); // Executa a ação
-            };
-            
-            // Lógica do botão Fechar/Cancelar
-            modalCloseButton.onclick = () => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            };
+            for (let i = 1; i < lines.length; i++) {
+                // Função auxiliar para lidar com CSVs simples, ignorando aspas internas
+                let values = lines[i].split(separator).map(v => v.trim().replace(/"/g, ''));
 
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-
-        // --- 1. Inicialização e Autenticação do Firebase ---
-        try {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-        } catch (error) {
-            console.error("Erro ao inicializar Firebase:", error);
-            showNotification("Erro Crítico", "Falha ao inicializar o Firebase. Verifique a configuração.");
-        }
-
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                userId = user.uid;
-                userIdDisplay.textContent = userId;
-                isAuthReady = true;
-                console.log("Usuário autenticado:", userId);
-                setupRealtimeListener(); 
-            } else {
-                try {
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                        console.log("Autenticação via token personalizado OK.");
-                    } else {
-                        await signInAnonymously(auth);
-                        console.log("Autenticação anônima OK.");
-                    }
-                } catch (error) {
-                    console.error("Erro na autenticação Firebase:", error);
-                    userIdDisplay.textContent = 'Erro de autenticação';
-                    isAuthReady = true; 
+                if (values.length !== headers.length) {
+                    console.warn(`Linha ${i + 1} ignorada devido a número incorreto de colunas. Separador usado: ${separator}`);
+                    continue; 
                 }
+                
+                const row = {};
+                for (let j = 0; j < headers.length; j++) {
+                    row[headers[j]] = values[j];
+                }
+                data.push(row);
             }
-        });
-
-        // --- 2. Lógica de Navegação por Abas ---
-        let currentTab = 'overview';
-        
-        function switchTab(newTab) {
-            currentTab = newTab;
-            
-            tabButtons.forEach(button => {
-                const isSelected = button.dataset.tab === newTab;
-                button.classList.toggle('border-sky-500', isSelected);
-                button.classList.toggle('text-sky-400', isSelected);
-                button.classList.toggle('border-transparent', !isSelected);
-                button.classList.toggle('text-gray-400', !isSelected);
-                button.classList.toggle('hover:text-sky-400', !isSelected);
-            });
-
-            tabViews.forEach(view => {
-                view.classList.toggle('hidden', view.id !== `view-${newTab}`);
-            });
-            
-            // Re-renderiza a visualização principal ao mudar de aba
-            if (newTab === 'overview') {
-                applySearchFilter(searchInput.value.trim());
-            } else if (newTab === 'list') {
-                renderBoxList(allBoxes);
-            }
+            return data;
         }
 
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => switchTab(button.dataset.tab));
-        });
-
-        // --- 3. Função de Filtragem (Pesquisa) ---
-        function filterBoxes(boxes, query) {
-            if (!query) return boxes;
-            const lowerCaseQuery = query.toLowerCase();
-
-            return boxes.filter(box => {
-                return (
-                    box.boxCode.toLowerCase().includes(lowerCaseQuery) ||
-                    box.palletName.toLowerCase().includes(lowerCaseQuery) ||
-                    box.situacao.toLowerCase().includes(lowerCaseQuery) ||
-                    box.problema.toLowerCase().includes(lowerCaseQuery) ||
-                    box.projeto.toLowerCase().includes(lowerCaseQuery) // Inclui pesquisa por Projeto
-                );
-            });
-        }
-        
-        function applySearchFilter(query) {
-            const filteredBoxes = filterBoxes(allBoxes, query);
-            renderPalletOverview(filteredBoxes);
-        }
-
-        searchInput.addEventListener('input', (e) => {
-            applySearchFilter(e.target.value.trim());
-        });
-
-        // --- 4. Função para Salvar Dados no Firestore ---
-        async function saveBox(event) {
-            event.preventDefault();
-            
-            if (!isAuthReady || !userId) {
-                showNotification("Aguarde", "O sistema está carregando a autenticação. Tente novamente em instantes.");
+        /**
+         * Renderiza os dados em uma tabela HTML.
+         * @param {Array<Object>} data - O array de dados a ser exibido.
+         */
+        function renderTable(data) {
+            if (data.length === 0) {
+                dataTableContainer.innerHTML = '<p class="text-gray-500">Nenhum dado encontrado ou planilha vazia.</p>';
                 return;
             }
 
-            const boxCode = boxCodeInput.value.trim();
-            const palletName = palletNameInput.value.trim();
-            const projeto = boxProjectInput.value.trim(); // NOVO: Captura o Projeto
-            const situacao = boxStatusSelect.value;
-            const problema = boxProblemTextarea.value.trim();
+            const headers = Object.keys(data[0]);
             
-            if (!boxCode || !palletName || !problema) {
-                showNotification("Dados Faltando", "Por favor, preencha o Código, Pallet e a Descrição do Problema.");
-                return;
+            let html = `
+                <table class="min-w-full divide-y divide-gray-200 border border-gray-100 rounded-lg">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            ${headers.map(h => `<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${h}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+            `;
+
+            // Limita a exibição a 10 linhas para evitar sobrecarga no demo
+            const displayData = data.slice(0, 10); 
+            
+            html += displayData.map(row => {
+                return `
+                    <tr>
+                        ${headers.map(h => `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${row[h]}</td>`).join('')}
+                    </tr>
+                `;
+            }).join('');
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            if (data.length > 10) {
+                 html += `<p class="text-sm text-gray-500 mt-2">Exibindo apenas as primeiras 10 linhas de ${data.length} linhas.</p>`;
             }
 
-            submitButton.disabled = true;
-            submitButton.textContent = 'Salvando...';
-            feedbackMessage.textContent = '';
-            feedbackMessage.className = 'text-center text-sm font-medium h-4';
+            dataTableContainer.innerHTML = html;
+        }
+
+        /**
+         * Função principal para carregar os dados da planilha.
+         */
+        async function carregarDadosAuditoria() {
+            loadingIndicator.classList.remove('hidden');
+            dataTableContainer.innerHTML = '';
+            errorFeedback.classList.add('hidden');
+            
+            // Uma verificação de segurança: se faltar o parâmetro CSV, ainda assim avisa.
+            if (!SHEET_CSV_URL.includes('output=csv')) {
+                 errorFeedback.textContent = 'ERRO: O URL parece não estar no formato CSV. Certifique-se de que termina com ?output=csv&gid=0';
+                 errorFeedback.classList.remove('hidden');
+                 loadingIndicator.classList.add('hidden');
+                 return;
+            }
 
             try {
-                // Caminho da coleção
-                const boxesRef = collection(db, `artifacts/${appId}/users/${userId}/boxes`);
+                const response = await fetch(SHEET_CSV_URL);
                 
-                await addDoc(boxesRef, {
-                    boxCode: boxCode,
-                    palletName: palletName,
-                    projeto: projeto, // NOVO CAMPO: Projeto
-                    situacao: situacao,
-                    problema: problema,
-                    timestamp: serverTimestamp(),
-                    createdBy: userId
-                });
-
-                // Limpar o formulário e dar feedback
-                boxForm.reset();
-                feedbackMessage.textContent = 'Registro salvo com sucesso!';
-                feedbackMessage.classList.add('text-green-400');
+                if (!response.ok) {
+                    throw new Error(`Erro de rede ou URL CSV inválido: ${response.statusText}`);
+                }
                 
-                // Mudar para a lista de pallets após o registro
-                setTimeout(() => switchTab('overview'), 1000); 
+                const csvText = await response.text();
+                
+                const dados = parseCSV(csvText);
+                
+                renderTable(dados);
 
             } catch (error) {
-                console.error("Erro ao salvar no Firestore:", error);
-                feedbackMessage.textContent = 'Erro ao salvar: ' + error.message;
-                feedbackMessage.classList.remove('text-green-400');
-                feedbackMessage.classList.add('text-red-400');
-                showNotification("Erro de Salvar", `Não foi possível salvar os dados. Detalhes: ${error.message}`);
+                console.error("Erro ao carregar dados da planilha:", error);
+                errorFeedback.textContent = `Falha ao carregar dados: ${error.message}. Certifique-se de que a planilha está PUBLICADA na Web como CSV.`;
+                errorFeedback.classList.remove('hidden');
             } finally {
-                submitButton.disabled = false;
-                submitButton.textContent = 'Registrar Caixa';
-            }
-        }
-        
-        boxForm.addEventListener('submit', saveBox);
-
-        // --- 5. Função para Ler Dados em Tempo Real (onSnapshot) ---
-        function setupRealtimeListener() {
-            if (!isAuthReady || !userId) {
-                return;
-            }
-
-            const boxesRef = collection(db, `artifacts/${appId}/users/${userId}/boxes`);
-            const q = query(boxesRef);
-
-            onSnapshot(q, (snapshot) => {
-                allBoxes = [];
-                snapshot.forEach((doc) => {
-                    // Mapeia o documento com os novos nomes de campo
-                    const data = doc.data();
-                    allBoxes.push({ 
-                        id: doc.id, 
-                        boxCode: data.boxCode || '', 
-                        palletName: data.palletName || 'SEM_PALLET',
-                        projeto: data.projeto || '', // NOVO CAMPO: Mapeamento de Projeto
-                        situacao: data.situacao || 'Pendente',
-                        problema: data.problema || '',
-                        timestamp: data.timestamp
-                    });
-                });
-                
-                // Ordenar no cliente por Pallet e depois por Código da Caixa
-                allBoxes.sort((a, b) => {
-                    if (a.palletName < b.palletName) return -1;
-                    if (a.palletName > b.palletName) return 1;
-                    if (a.boxCode < b.boxCode) return -1;
-                    if (a.boxCode > b.boxCode) return 1;
-                    return 0;
-                });
-
-                // Renderiza as visualizações
-                applySearchFilter(searchInput.value.trim());
-                if (currentTab === 'list') {
-                   renderBoxList(allBoxes); // Garante que a lista completa seja atualizada
-                }
-            }, (error) => {
-                console.error("Erro ao carregar dados em tempo real:", error);
-                document.getElementById('overview-loading-message').textContent = "Erro ao carregar dados.";
-                document.getElementById('list-loading-message').textContent = "Erro ao carregar dados.";
-            });
-        }
-
-        // --- 6. Função para Finalizar Pallet (Batch Write) ---
-        async function updatePalletStatus(palletName) {
-            if (!isAuthReady || !userId) {
-                showNotification("Aguarde", "O sistema não está pronto. Tente novamente em instantes.");
-                return;
-            }
-            
-            const boxesRef = collection(db, `artifacts/${appId}/users/${userId}/boxes`);
-            
-            // 1. Criar a query para encontrar todas as caixas Pendentes deste pallet
-            const q = query(
-                boxesRef, 
-                where("palletName", "==", palletName),
-                where("situacao", "==", "Pendente")
-            );
-
-            showNotification("Processando", `Finalizando caixas pendentes no Pallet: ${palletName}...`);
-            
-            try {
-                const snapshot = await getDocs(q);
-                
-                if (snapshot.empty) {
-                    showNotification("Sucesso", `O Pallet "${palletName}" já está 100% finalizado.`);
-                    return;
-                }
-
-                const batch = writeBatch(db);
-                let updateCount = 0;
-
-                snapshot.forEach((doc) => {
-                    // Atualiza cada documento para "Finalizado"
-                    batch.update(doc.ref, { 
-                        situacao: "Finalizado", 
-                        timestamp: serverTimestamp() 
-                    });
-                    updateCount++;
-                });
-
-                await batch.commit();
-                
-                showNotification("Sucesso", `${updateCount} caixa(s) no Pallet "${palletName}" foram finalizadas!`);
-
-            } catch (error) {
-                console.error("Erro ao finalizar pallet via batch:", error);
-                showNotification("Erro de Atualização", `Falha ao finalizar o Pallet ${palletName}. Detalhes: ${error.message}`);
-            }
-        }
-        
-        // --- 7. Função para Excluir Caixa ---
-        async function deleteBox(boxId) {
-            if (!isAuthReady || !userId) {
-                showNotification("Aguarde", "O sistema não está pronto. Tente novamente em instantes.");
-                return;
-            }
-
-            try {
-                // Referência ao documento a ser excluído
-                const boxDocRef = doc(db, `artifacts/${appId}/users/${userId}/boxes`, boxId);
-                
-                await deleteDoc(boxDocRef);
-                
-                // O listener onSnapshot cuidará da atualização da UI.
-                showNotification("Sucesso", "O registro da caixa foi excluído permanentemente.");
-
-            } catch (error) {
-                console.error("Erro ao excluir documento:", error);
-                showNotification("Erro de Exclusão", `Falha ao excluir o registro. Detalhes: ${error.message}`);
+                loadingIndicator.classList.add('hidden');
             }
         }
 
-
-        // --- 8. Renderizar Visualização de Pallets (Agrupado) ---
-        function renderPalletOverview(boxes) {
-            palletOverviewContainer.innerHTML = '';
-            
-            if (boxes.length === 0) {
-                palletOverviewContainer.innerHTML = `<p class="text-center text-gray-400 p-4 border border-dashed border-gray-600 rounded-lg">${searchInput.value.trim() ? 'Nenhuma caixa encontrada com este filtro.' : 'Nenhuma caixa registrada ainda.'}</p>`;
-                return;
-            }
-
-            // 1. Agrupar Caixas por Pallet
-            const grouped = boxes.reduce((acc, box) => {
-                const pallet = box.palletName || 'SEM_PALLET';
-                if (!acc[pallet]) {
-                    acc[pallet] = [];
-                }
-                acc[pallet].push(box);
-                return acc;
-            }, {});
-
-            // 2. Renderizar cada Pallet como um painel expansível
-            Object.entries(grouped).forEach(([palletName, boxesInPallet]) => {
-                const totalCount = boxesInPallet.length;
-                const pendingCount = boxesInPallet.filter(b => b.situacao === 'Pendente').length;
-                const statusColor = pendingCount > 0 ? 'text-yellow-400' : 'text-green-400';
-                
-                const palletDiv = document.createElement('div');
-                palletDiv.className = 'bg-gray-700 rounded-lg shadow-md overflow-hidden';
-                
-                const header = document.createElement('button');
-                header.className = 'flex justify-between items-center w-full p-4 font-semibold text-lg hover:bg-gray-600 transition duration-150';
-                header.innerHTML = `
-                    <span class="truncate text-white">${palletName}</span>
-                    <span class="flex items-center space-x-2 text-sm">
-                        <span class="${statusColor}">${pendingCount} Pendente(s)</span>
-                        <span class="bg-sky-500 text-white px-2 py-0.5 rounded-full">${totalCount}</span>
-                        <svg class="h-5 w-5 transform transition-transform duration-300" data-arrow="true" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                        </svg>
-                    </span>
-                `;
-
-                const content = document.createElement('div');
-                content.className = 'px-4 pb-4 space-y-3 hidden border-t border-gray-600';
-                
-                // 3. Botão de Finalizar Pallet (ou mensagem de Finalizado)
-                if (pendingCount > 0) {
-                    const finalizeButton = document.createElement('button');
-                    finalizeButton.className = 'w-full py-2 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 transition duration-200 mt-3 mb-3';
-                    finalizeButton.textContent = `FINALIZAR PALLET (${pendingCount} PENDENTE(S))`;
-                    
-                    finalizeButton.addEventListener('click', (e) => {
-                        e.stopPropagation(); // Impede a propagação para fechar/abrir o painel
-                        showConfirmationModal("Confirmação", 
-                            `Tem certeza que deseja finalizar todas as ${pendingCount} caixas pendentes no Pallet "${palletName}"? Esta ação é irreversível.`, 
-                            () => {
-                                updatePalletStatus(palletName);
-                            }
-                        );
-                    });
-                    content.appendChild(finalizeButton);
-                } else {
-                     const finalizedMessage = document.createElement('p');
-                     finalizedMessage.className = 'text-center text-green-400 font-medium pt-3 mb-3';
-                     finalizedMessage.textContent = 'Este pallet está 100% Finalizado.';
-                     content.appendChild(finalizedMessage);
-                }
-
-                // Adicionar Caixas ao conteúdo do Pallet
-                boxesInPallet.forEach(box => {
-                    const boxStatusColor = box.situacao === 'Finalizado' ? 'bg-green-600' : 'bg-yellow-600';
-                    const boxStatusText = box.situacao;
-                    const dateText = box.timestamp ? 
-                        new Date(box.timestamp.seconds * 1000).toLocaleString('pt-BR', { dateStyle: 'short' }) : 'S/ Data';
-
-                    const boxHtml = `
-                        <div class="bg-gray-800 p-3 rounded-lg border-l-4 border-sky-400">
-                            <div class="flex justify-between items-center text-sm">
-                                <span class="font-bold text-sky-300 truncate">${box.boxCode}</span>
-                                <span class="text-xs font-semibold px-2 py-0.5 rounded ${boxStatusColor} text-white whitespace-nowrap">
-                                    ${boxStatusText}
-                                </span>
-                            </div>
-                            <!-- NOVO: Exibição do Projeto -->
-                            ${box.projeto ? `<p class="text-xs text-gray-500 mt-0.5 truncate italic">Projeto: ${box.projeto}</p>` : ''}
-                            <p class="text-xs text-gray-400 mt-1 truncate">
-                                Problema: ${box.problema}
-                            </p>
-                            <p class="text-[10px] text-gray-500 mt-1">Registrado: ${dateText}</p>
-                        </div>
-                    `;
-                    content.insertAdjacentHTML('beforeend', boxHtml);
-                });
-
-                header.addEventListener('click', () => {
-                    const isHidden = content.classList.toggle('hidden');
-                    const arrow = header.querySelector('[data-arrow]');
-                    if (arrow) {
-                        arrow.classList.toggle('rotate-180', !isHidden);
-                    }
-                });
-                
-                palletDiv.appendChild(header);
-                palletDiv.appendChild(content);
-                palletOverviewContainer.appendChild(palletDiv);
-            });
-        }
-
-        // --- 9. Renderizar Lista Completa (Plana) ---
-        function renderBoxList(boxes) {
-            listContainer.innerHTML = '';
-            
-            if (boxes.length === 0) {
-                listContainer.innerHTML = '<p class="text-center text-gray-400 p-4 border border-dashed border-gray-600 rounded-lg">Nenhuma caixa registrada ainda.</p>';
-                return;
-            }
-            
-            // A lista já está ordenada pelo listener
-            boxes.forEach(box => {
-                const statusColor = box.situacao === 'Finalizado' ? 'bg-green-600' : 'bg-yellow-600';
-                const statusText = box.situacao;
-                const dateText = box.timestamp ? 
-                    new Date(box.timestamp.seconds * 1000).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 
-                    'Sem data';
-                
-                const boxId = box.id; // ID do Firestore
-                    
-                const itemHtml = `
-                    <div class="bg-gray-700 p-4 rounded-lg shadow-md border-l-4 border-sky-500">
-                        <div class="flex justify-between items-center mb-2">
-                            <!-- Detalhes principais -->
-                            <div class="flex-grow min-w-0 pr-4">
-                                <h4 class="text-lg font-bold text-white truncate">${box.boxCode}</h4>
-                                <p class="text-sm text-sky-300 font-medium truncate">Pallet: ${box.palletName}</p>
-                                <!-- NOVO: Exibição do Projeto -->
-                                ${box.projeto ? `<p class="text-xs text-gray-400 font-medium italic mt-0.5 truncate">Projeto: ${box.projeto}</p>` : ''}
-                            </div>
-                            
-                            <!-- Status e Ações -->
-                            <div class="flex items-center space-x-2 flex-shrink-0">
-                                <span class="text-xs font-semibold px-3 py-1 rounded-full ${statusColor} text-white whitespace-nowrap hidden sm:block">
-                                    ${statusText}
-                                </span>
-                                <!-- Botão de Lixeira -->
-                                <button data-box-id="${boxId}" 
-                                    class="delete-button text-red-400 hover:text-red-500 transition duration-150 p-1 rounded-full bg-gray-600 hover:bg-gray-500" 
-                                    aria-label="Excluir registro da caixa ${box.boxCode}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
-                                        <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.25H2.75a.75.75 0 000 1.5h.75v8.25A2.75 2.75 0 006.25 17h7.5A2.75 2.75 0 0016.5 13.75V5.5h.75a.75.75 0 000-1.5H14v-.25A2.75 2.75 0 0011.25 1h-2.5zM10 2.5a1.25 1.25 0 00-1.25 1.25v.25h2.5v-.25A1.25 1.25 0 0010 2.5zM7.5 7.75a.75.75 0 00-1.5 0v5.5a.75.75 0 001.5 0v-5.5zm4 0a.75.75 0 00-1.5 0v5.5a.75.75 0 001.5 0v-5.5z" clip-rule="evenodd" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                        <p class="text-sm text-gray-300 mb-2 mt-2 pt-2 border-t border-gray-600">${box.problema}</p>
-                        <p class="text-xs text-gray-400 italic">Registrado em: ${dateText}</p>
-                    </div>
-                `;
-                listContainer.insertAdjacentHTML('beforeend', itemHtml);
-            });
-            
-            // Anexar listeners de exclusão após o DOM ser montado
-            listContainer.querySelectorAll('.delete-button').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const boxId = e.currentTarget.dataset.boxId;
-                    const boxCode = allBoxes.find(b => b.id === boxId)?.boxCode || 'este registro';
-                    
-                    showConfirmationModal("Confirmar Exclusão", 
-                        `Tem certeza que deseja excluir o registro da caixa "${boxCode}"? Esta ação é irreversível.`, 
-                        () => {
-                            deleteBox(boxId);
-                        }
-                    );
-                });
-            });
-        }
-
-        // Inicialização da aba padrão (Visualização Pallets)
-        switchTab(currentTab);
-
+        // Inicia o carregamento dos dados quando a janela carregar
+        window.onload = carregarDadosAuditoria;
     </script>
+
 </body>
 </html>
